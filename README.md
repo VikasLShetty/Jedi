@@ -8,3 +8,6 @@ Installed Ubuntu-desktop environment and strarted the xrdp server for all you GU
 
 ###October 22nd 2015
 Uploaded project proposal concering research on the paper [Fleet] (http://dl.acm.org/citation.cfm?id=2620750)
+
+###November 5th 2015
+Creation and uploading of the first checkpoint file that documents the progress made so far the challenges that need to be addressed by the next checkpoint and the graphs that we would be drawing during the FINAL-EXAM / POSTER-REVIEW session.
