@@ -1,0 +1,12 @@
+Useful Links
+    1. https://github.com/mininet/openflow-tutorial/wiki/Create-a-Learning-Switch (Mininet and POX details)
+    2. http://www.brianlinkletter.com/how-to-use-miniedit-mininets-graphical-user-interface/ (Using miniedit GUI)
+
+1. If we are using multiple controllers configure each controller to use a different port
+2. Always use start CLI
+3. Always quit the CLI by typing exit
+4. Switch configurations can be seen through OVS Summary
+5. To look at switch flow tables open a new terminal and run the following command
+    ovs-ofctl dump-flows <Switch name>
+6. To clean mininet after each run type the following command
+    sudo mn -c
