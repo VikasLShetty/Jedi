@@ -11,3 +11,6 @@ Uploaded project proposal concering research on the paper [Fleet] (http://dl.acm
 
 ###November 5th 2015
 Creation and uploading of the first checkpoint file that documents the progress made so far the challenges that need to be addressed by the next checkpoint and the graphs that we would be drawing during the FINAL-EXAM / POSTER-REVIEW session.
+
+###November 8th 2015
+Added a file Mininet Cheatsheet that can be used by the team to document helpful mininet commands and Internet links
