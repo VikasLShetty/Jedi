@@ -13,7 +13,7 @@ Creating a simple network toplogy using Mininet
     4. Set the MAC address of each host as equal to it's IP
     5. Configure the switch to connect to a remote controller
 
-Mininet tutorial
+Mininet useful commands
 1. To get the list of nodes
 mininet> nodes
 available nodes are:
@@ -25,6 +25,23 @@ mininet> h1 ifconfig
 3. Spawn an xterm for one or more hosts
 mininet> xterm h1 h2
     (Before you run this command make sure that the Xterm session is running)
+
+DPCTL and useful commands
+1. Used to view a single switch's flow table
+2. Can be used to view flow state and flow counters
+3. Most OF switches can start up with a passive listening port (By default - 6634). You can use this to poll the switch without having to add debugging code to the controller
+4. To dump the port state and the capabilities
+    dpctl show tcp:127.0.0.1:6634
+5. To dump all the flow table entries for a switch
+    dpctl dump-flows tcp:127.0.0.1:6634
+    If the controller is not started yet then there would be no flows assigned to this switch
+6. Without any flow table entries the switch will not know how to forward the packets. We can use dpctl to manually add the flow table entries
+    1. Create a simple flow rule that allows host 1 to ping host 2
+        dpctl add-flow tcp:127.0.0.1:6634 in_port=1,actions=output:2 [This forwards packets coming at port 1 to port 2]
+        dpctl add-flow tcp:127.0.0.1:6634 in_port=2,actions=output:1 [This forwards packets coming at port 2 to port 1]
+        It is mandatory to set up the bidirectional flows else the ping commands would time out
+    2. Each flow rule by default has a default timeout option of 60 seconds. To by pass this we could create flowrules that have a longer default timeout
+        dpctl add-flow tcp:127.0.0.1:6634 in_port=1,idle_timeout=120,actions=output:2
 
 When using the GUI
 1. If we are using multiple controllers configure each controller to use a different port
