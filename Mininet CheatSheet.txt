@@ -49,7 +49,7 @@ When using the GUI
 3. Always quit the CLI by typing exit
 
 When using the terminal
-1.. Switch configurations can be seen through OVS Summary
+1. Switch configurations can be seen through OVS Summary
 2. To look at switch flow tables open a new terminal and run the following command
     ovs-ofctl dump-flows <Switch name>
 3. To clean mininet after each run type the following command
