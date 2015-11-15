@@ -116,13 +116,13 @@ def myNetwork():
     for i in range(1,hosts+1):
         for j in range(1,hosts+1):
             if(i!=j):
-                #k = random.randint(0,4)
-                #if(k > 1):
-                if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
-                    graph_extern[mininetswitch[i]].append(mininetswitch[j])
-                    graph_extern[mininetswitch[j]].append(mininetswitch[i])
-                    b = random.choice(bandwidths)
-                    net.addLink(mininetswitch[i],mininetswitch[j],cls=TCLink,bw=b)
+                k = random.randint(0,4)
+                if(k > 1):
+                    if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
+                        graph_extern[mininetswitch[i]].append(mininetswitch[j])
+                        graph_extern[mininetswitch[j]].append(mininetswitch[i])
+                        b = random.choice(bandwidths)
+                        net.addLink(mininetswitch[i],mininetswitch[j],cls=TCLink,bw=b)
 
 
     info( '*** Add hosts\n')
