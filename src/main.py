@@ -75,6 +75,7 @@ def addFlowRules(net,path,controller):
     controller.cmd('ovs-ofctl add-flow '+last_switch+' in_port='+last_port+',actions=output:'+prev_port)
     info('ovs-ofctl add-flow '+last_switch+' in_port='+last_port+',actions=output:'+prev_port+'\n')
 
+
 def simulateLinkFailure(path):
     global graph_extern
     k = random.randint(1,len(path)-3)
@@ -82,85 +83,88 @@ def simulateLinkFailure(path):
     graph_extern[path[k+1]].remove(path[k])
 
 
-
 def myNetwork():
     bandwidths = [1,5,10,20,40]
-    global graph_extern #mGlobal  view of adjacency list
-    #hosts are actually switches here
-      #no of switches
-    hosts = 4
-    mininetswitch = [0 for i in range(hosts+1)]
-    host=[0 for i in range(hosts+1)]
+    global graph_extern #Global view of the adjacency list
+    switches = 4
+    mininetswitch = [0 for i in range(switches+1)]
+    switch = [0 for i in range(switches+1)]
 
     net = Mininet( topo=None,
                    build=False,
                    ipBase='10.0.0.0/8')
 
     info( '*** Adding controller\n' )
-    c0=net.addController(name='c0',
-                      controller=RemoteController,
-                      ip='127.0.0.1',
-                      protocol='tcp',
-                      port=6633)
+    c0 = net.addController(name='c0',
+                           controller=RemoteController,
+                           ip='127.0.0.1',
+                           protocol='tcp',
+                           port=6633)
 
-    info( '*** Add switches\n')
+    info( '*** Add switches\n' )
 
+    for i in range(1, switches+1):
+        switch[i] = i  #Data Structure used for maintaining the Global view of switches
+        mininetswitch[i] = 's'+str(i)
+        net.addSwitch(mininetswitch[i], cls=OVSKernelSwitch) #mininets view
 
-    for i in range(1,hosts+1):
+    for i in range(switches+1):
+        graph_extern[mininetswitch[i]] = []
 
-        host[i]=i  #Data Structure used for maintaining the Global view of Hosts
-        mininetswitch[i]= 's'+str(i)
-        net.addSwitch('s'+str(i), cls=OVSKernelSwitch) #mininets view
-    for i in range(hosts+1):
-        graph_extern[mininetswitch[i]]=[]
-    for i in range(1,hosts+1):
-        for j in range(1,hosts+1):
-            if(i!=j):
-                k = random.randint(0,4)
+    for i in range(1, switches+1):
+        for j in range(1, switches+1):
+            if i != j:
+                k = random.randint(0, 4)
                 if(k > 1):
                     if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
                         graph_extern[mininetswitch[i]].append(mininetswitch[j])
                         graph_extern[mininetswitch[j]].append(mininetswitch[i])
                         b = random.choice(bandwidths)
-                        net.addLink(mininetswitch[i],mininetswitch[j],cls=TCLink,bw=b)
+                        net.addLink(mininetswitch[i], mininetswitch[j], cls=TCLink, bw=b)
 
-
-    info( '*** Add hosts\n')
+    info( '*** Add hosts\n' )
     h1 = net.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
     h2 = net.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
+
     src=mininetswitch[1]
     dest=mininetswitch[2]
+
     net.addLink(mininetswitch[1],h1)
     net.addLink(mininetswitch[2], h2)
 
 
-
-    info( '*** Starting network\n')
+    info( '*** Starting network\n' )
     net.build()
-    info( '*** Starting controllers\n')
+    info( '*** Starting controllers\n' )
     for controller in net.controllers:
         controller.start()
-    for i in range(1, hosts+1):
-        net.get('s'+str(i)).start([c0])
-    info( '*** Starting switches\n')
 
-    info( '*** Post configure switches and hosts\n')
-    path=find_shortest_path(graph_extern,src,dest)
-    path.insert(0,'h1')
+    for i in range(1, switches+1):
+        net.get('s'+str(i)).start([c0])
+
+    info( '*** Starting switches\n' )
+
+    info( '*** Post configure switches and hosts\n' )
+    path = find_shortest_path(graph_extern, src, dest)
+    path.insert(0, 'h1')
     path.append('h2')
-    #addFlowRules(net,path,c0)
+
+    addFlowRules(net,path,c0)
     info('old_graph'+str(graph_extern)+'\n')
     info('old_path:'+str(path)+'\n')
     simulateLinkFailure(path)
 
     path.remove('h1')
     path.remove('h2')
-    new_path=find_shortest_path(graph_extern,src,dest)
-    new_path.insert(0,'h1')
+
+    new_path = find_shortest_path(graph_extern,src,dest)
+    new_path.insert(0, 'h1')
     new_path.append('h2')
+
     info('new_graph'+str(graph_extern)+'\n')
     info('new_path'+str(new_path)+'\n')
     addFlowRules(net,new_path,c0)
+
     CLI(net)
     net.stop()
 
