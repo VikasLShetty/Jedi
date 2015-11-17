@@ -8,8 +8,11 @@ from mininet.node import IVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
+
 from subprocess import call
 import random
+
+from singleton import *
 
 graph_extern = {}
 
@@ -54,7 +57,7 @@ def addFlowRules(net,path,controller):
                 switches=str(link).split('<->')
                 if(switches[0].split('-')[0]==path[i]):
                     switch1=switches[0].split('-')[0]
-                    switch2=switches[1].split('-')[0]
+                    switch4=switches[1].split('-')[0]
                     switch1_port=switches[0][-1]
                     switch2_port=switches[1][-1]
                 else:
@@ -84,67 +87,65 @@ def simulateLinkFailure(path):
 
 
 def myNetwork():
-    bandwidths = [1,5,10,20,40]
-    global graph_extern #Global view of the adjacency list
-    switches = 4
-    mininetswitch = [0 for i in range(switches+1)]
-    switch = [0 for i in range(switches+1)]
+    mininetswitch = [0 for i in range(NUM_SWITCHES + 1)]
 
+    info( '*** Creating the initial Mininet object ***\n')
     net = Mininet( topo=None,
                    build=False,
                    ipBase='10.0.0.0/8')
 
-    info( '*** Adding controller\n' )
+    info( '*** Adding controller ***\n' )
     c0 = net.addController(name='c0',
                            controller=RemoteController,
                            ip='127.0.0.1',
                            protocol='tcp',
                            port=6633)
 
-    info( '*** Add switches\n' )
+    info( '*** Add switches ***\n' )
 
-    for i in range(1, switches+1):
-        switch[i] = i  #Data Structure used for maintaining the Global view of switches
-        mininetswitch[i] = 's'+str(i)
-        net.addSwitch(mininetswitch[i], cls=OVSKernelSwitch) #mininets view
+    for i in range(1, NUM_SWITCHES + 1):
+        mininetswitch[i] = '%s%d' % ('s', i)
+        net.addSwitch(mininetswitch[i], cls=OVSKernelSwitch)
 
-    for i in range(switches+1):
+    for i in range(NUM_SWITCHES + 1):
         graph_extern[mininetswitch[i]] = []
 
-    for i in range(1, switches+1):
-        for j in range(1, switches+1):
-            if i != j:
-                k = random.randint(0, 4)
-                if(k > 1):
-                    if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
-                        graph_extern[mininetswitch[i]].append(mininetswitch[j])
-                        graph_extern[mininetswitch[j]].append(mininetswitch[i])
-                        b = random.choice(bandwidths)
-                        net.addLink(mininetswitch[i], mininetswitch[j], cls=TCLink, bw=b)
+    for i in range(1, NUM_SWITCHES + 1):
+        for j in range(1, NUM_SWITCHES + 1):
+            if i == j:
+                continue
+            k = random.randint(0, NUM_SWITCHES)
+            if k == 0:
+                continue
+            if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
+                graph_extern[mininetswitch[i]].append(mininetswitch[j])
+                graph_extern[mininetswitch[j]].append(mininetswitch[i])
+                b = random.choice(BANDWIDTHS)
+                net.addLink(mininetswitch[i], mininetswitch[j], cls=TCLink, bw=b)
 
-    info( '*** Add hosts\n' )
+    info( '*** Add hosts ***\n' )
     h1 = net.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
     h2 = net.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
 
-    src=mininetswitch[1]
-    dest=mininetswitch[2]
+    # Source and Destination will always be mininet switches 1 and 2
+    src = mininetswitch[1]
+    dest = mininetswitch[2]
 
-    net.addLink(mininetswitch[1],h1)
+    net.addLink(mininetswitch[1], h1)
     net.addLink(mininetswitch[2], h2)
 
-
-    info( '*** Starting network\n' )
+    info( '*** Starting network ***\n' )
     net.build()
-    info( '*** Starting controllers\n' )
+
+    info( '*** Starting controllers ***\n' )
     for controller in net.controllers:
         controller.start()
 
-    for i in range(1, switches+1):
-        net.get('s'+str(i)).start([c0])
+    info( '*** Starting switches ***\n' )
+    for i in range(1, NUM_SWITCHES + 1):
+        net.get('%s%d' % ('s', i)).start([c0])
 
-    info( '*** Starting switches\n' )
-
-    info( '*** Post configure switches and hosts\n' )
+    info( '*** Post configure switches and hosts ***\n' )
     path = find_shortest_path(graph_extern, src, dest)
     path.insert(0, 'h1')
     path.append('h2')
