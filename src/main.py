@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 from mininet.net import Mininet
 from mininet.node import Controller, RemoteController, OVSController
 from mininet.node import CPULimitedHost, Host, Node
@@ -8,18 +7,13 @@ from mininet.node import IVSSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
+import networkx as nx
 
+from zookeeper_wrapper import ZooKeeperWrapper
 from subprocess import call
 import random
 
 from singleton import *
-
-graph_extern = {}
-
-def admin1():
-    pass
-    #need to implement this as a seprate file
-
 
 def find_shortest_path(graph,start,end,path=[]):
     path = path + [start]
@@ -35,7 +29,6 @@ def find_shortest_path(graph,start,end,path=[]):
                 if not shortest or len(newpath) < len(shortest):
                     shortest = newpath
     return shortest
-
 
 def addFlowRules(net,path,controller):
     Flow_path=[]
@@ -78,17 +71,17 @@ def addFlowRules(net,path,controller):
     controller.cmd('ovs-ofctl add-flow '+last_switch+' in_port='+last_port+',actions=output:'+prev_port)
     info('ovs-ofctl add-flow '+last_switch+' in_port='+last_port+',actions=output:'+prev_port+'\n')
 
-
 def simulateLinkFailure(path):
-    global graph_extern
+    #global graph_extern
     k = random.randint(1,len(path)-3)
-    graph_extern[path[k]].remove(path[k+1])
-    graph_extern[path[k+1]].remove(path[k])
-
+    a = path[k]
+    b = path[k+1]
+    graph_extern.remove_edge(a,b)
+    # graph_extern.remove_edge(b,a)
+    # graph_extern[path[k]].remove(path[k+1])
+    # graph_extern[path[k+1]].remove(path[k])
 
 def myNetwork():
-    mininetswitch = [0 for i in range(NUM_SWITCHES + 1)]
-
     info( '*** Creating the initial Mininet object ***\n')
     net = Mininet( topo=None,
                    build=False,
@@ -108,21 +101,21 @@ def myNetwork():
         net.addSwitch(mininetswitch[i], cls=OVSKernelSwitch)
 
     for i in range(NUM_SWITCHES + 1):
-        graph_extern[mininetswitch[i]] = []
+        graph_extern.add_node(mininetswitch[i])
 
     for i in range(1, NUM_SWITCHES + 1):
         for j in range(1, NUM_SWITCHES + 1):
             if i == j:
                 continue
-            k = random.randint(0, NUM_SWITCHES)
+            k = random.randint(0, 5)#probability of 1/5
             if k == 0:
                 continue
             if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
-                graph_extern[mininetswitch[i]].append(mininetswitch[j])
-                graph_extern[mininetswitch[j]].append(mininetswitch[i])
                 b = random.choice(BANDWIDTHS)
+                graph_extern.add_edge(mininetswitch[i],mininetswitch[j],weight=b)
+                graph_extern.add_edge(mininetswitch[j],mininetswitch[i],weight=b)
                 net.addLink(mininetswitch[i], mininetswitch[j], cls=TCLink, bw=b)
-
+    
     info( '*** Add hosts ***\n' )
     h1 = net.addHost('h1', cls=Host, ip='10.0.0.1', defaultRoute=None)
     h2 = net.addHost('h2', cls=Host, ip='10.0.0.2', defaultRoute=None)
@@ -146,7 +139,8 @@ def myNetwork():
         net.get('%s%d' % ('s', i)).start([c0])
 
     info( '*** Post configure switches and hosts ***\n' )
-    path = find_shortest_path(graph_extern, src, dest)
+    #path = find_shortest_path(graph_extern, src, dest)
+    path = netshortestpath(src, dest)
     path.insert(0, 'h1')
     path.append('h2')
 
@@ -158,7 +152,24 @@ def myNetwork():
     path.remove('h1')
     path.remove('h2')
 
-    new_path = find_shortest_path(graph_extern,src,dest)
+    # Code to integrate with ZooKeeper
+    # Create the ZooKeeperWrapper helper object 
+    helper = ZooKeeperWrapper()
+    # Create the Kazoo instance. Used for interacting with ZooKeeper
+    zk = helper.initializeZooKeeperClient()
+    # Start the Kazoo instance
+    helper.startOperation(zk)
+    # Ensure that the ZooKeeper nodes are present before we start working
+    helper.ensurePathPresence(zk)
+    # The admins give out their preference
+    # Get a random ordering of the administrators
+    admin_order = random.sample(range(1, 4), 3)
+    for admin in admin_order:
+        helper.implementAdminLocking(zk, admin)
+
+    data, stat = helper.getNodeData(zk, DATA_PATH)
+    new_path, score = convertToConfig(data)
+    new_path = new_path.split(",")
     new_path.insert(0, 'h1')
     new_path.append('h2')
 
@@ -168,6 +179,9 @@ def myNetwork():
 
     CLI(net)
     net.stop()
+
+    # The Zookeeper helper needs to be stopped
+    helper.stopOperation(zk)
 
 if __name__ == '__main__':
     setLogLevel( 'info' )
