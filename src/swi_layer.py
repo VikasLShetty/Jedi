@@ -13,13 +13,18 @@ def initiateVoting(helper, zk, admin_name):
     admin_path, admin_score = cast_vote(admin_name)
 
     if admin_score > score:
-        print("The current confidence score is %d while admin %s has a configuration "
+        temp = get_weight(admin_path)
+        if(admin_score == temp):
+            print("The current confidence score is %d while admin %s has a configuration "
               "with a higher confidence score %d" % (score, admin_name, admin_score))
-        print("Will store the configuration %s with confidence score %s"
+            print("Will store the configuration %s with confidence score %s"
               % (admin_path, admin_score))
-        to_store = (admin_path, admin_score)
-        byte_data = bytes(to_store)
-        helper.setNodeData(zk, DATA_PATH, byte_data)
+            to_store = (admin_path, admin_score)
+            byte_data = bytes(to_store)
+
+            helper.setNodeData(zk, DATA_PATH, byte_data)
+        else:
+            print("The score was faked.Hence, its not updated as the best path")
     else:
         print("The current confidence score is %d while admin %s has a configuration "
               "with a lower confidence score %d" % (score, admin_name, admin_score))

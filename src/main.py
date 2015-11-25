@@ -14,6 +14,7 @@ from subprocess import call
 import random
 
 from singleton import *
+import timeit
 
 def find_shortest_path(graph,start,end,path=[]):
     path = path + [start]
@@ -107,7 +108,7 @@ def myNetwork():
         for j in range(1, NUM_SWITCHES + 1):
             if i == j:
                 continue
-            k = random.randint(0, 5)#probability of 1/5
+            k = random.randint(0, 5)#probability of 4/5
             if k == 0:
                 continue
             if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
@@ -147,7 +148,9 @@ def myNetwork():
     addFlowRules(net,path,c0)
     info('old_graph'+str(graph_extern)+'\n')
     info('old_path:'+str(path)+'\n')
+    startlinkfail = timeit.default_timer()
     simulateLinkFailure(path)
+
 
     path.remove('h1')
     path.remove('h2')
@@ -169,14 +172,18 @@ def myNetwork():
 
     data, stat = helper.getNodeData(zk, DATA_PATH)
     new_path, score = convertToConfig(data)
+
     new_path = new_path.split(",")
+    stoplinkfail1 = timeit.default_timer()
+    print("Time taken for ZooKeeper to reach a consensus:%s"%(stoplinkfail1-startlinkfail))
     new_path.insert(0, 'h1')
     new_path.append('h2')
 
     info('new_graph'+str(graph_extern)+'\n')
     info('new_path'+str(new_path)+'\n')
     addFlowRules(net,new_path,c0)
-
+    stoplinkfail2 = timeit.default_timer()
+    print("Time taken to add new flow rules from time of link failure:%s"%(stoplinkfail2-startlinkfail))
     CLI(net)
     net.stop()
 
