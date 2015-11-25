@@ -12,7 +12,7 @@ def vote(src,dest,intent):
         confidence = get_weight(path)
         return (path,confidence)
 
-    if(intent == 1):          #Evil Guy. Non malicious
+    if(intent == 1):          #Evil Guy. malicious
         for paths in nx.all_simple_paths(graph_extern, src, dest):
             temp= get_weight(paths)
             if (temp>confidence):
@@ -21,7 +21,7 @@ def vote(src,dest,intent):
         #return shortest path weigth -1
         return (path,(get_weight(netshortestpath(src, dest))-1))
 
-    if(intent == 2):          #Evil Guy. Non malicious
+    if(intent == 2):          #Good Guy. mis-configured
         for paths in nx.all_simple_paths(graph_extern, src, dest):
             temp= get_weight(paths)
             if (temp>confidence):
