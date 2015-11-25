@@ -35,8 +35,12 @@ Only the following operations are supported
     6. get children
     7. sync
 
+Checking if ZooKeeper is running
+    ps -ef | grep zoo
+    If you find any process running then kill it through kill -9 and start again
 
 Starting Zookeeper
+    cd /usr/local/home/cse222a01/zookeeper/zookeeper-3.5.1-alpha
     bash bin/zkServer.sh start
 
 Where to find the log file
