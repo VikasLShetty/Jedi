@@ -7,7 +7,8 @@ Use this file for all Singleton instances that you need throughout the project
 import networkx as nx
 
 # - Constants that we won't be changing
-NUM_SWITCHES = 4
+RUN_FIRSTTIME=1
+NUM_SWITCHES = 5
 BANDWIDTHS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140]
 
 # - Global variables that we will be changing through out the program
@@ -27,7 +28,7 @@ def netshortestpath(start, end, path=[]):
     return path[end]
 
 def get_weight(path):
-    weight = 0
+    weight = 10000
     for i in range(len(path)):
         if((i+1)<len(path)):
             weight +=  graph_extern[path[i]][path[i+1]]['weight']
