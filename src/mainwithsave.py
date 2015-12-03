@@ -111,6 +111,10 @@ def myNetwork():
                 k = random.randint(0, 5)#probability of 4/5
                 if k == 0:
                     continue
+                if k == 1:
+                    continue
+                if k == 2:
+                    continue
                 if mininetswitch[j] not in graph_extern[mininetswitch[i]]:
                     b = random.choice(BANDWIDTHS)
                     graph_extern.add_edge(mininetswitch[i],mininetswitch[j],weight=b)
@@ -122,6 +126,7 @@ def myNetwork():
                 g.write(str(e)+';'+str(q)+';'+str(graph_extern.edge[e][q])+'\n')
         g.close()
     if RUN_FIRSTTIME==1:
+        oldnodes=set()
         for l in open('savedgraph2'):
             n1,n2,w=l.split(';')
             wr,wv=w.split(":")
@@ -132,6 +137,25 @@ def myNetwork():
             graph_extern.add_edge(n1,n2,weight=v)
             graph_extern.add_edge(n2,n1,weight=v)
             net.addLink(n1, n2, cls=TCLink, bw=v)
+            oldnodes.add(n1)
+            oldnodes.add(n2)
+        if len(oldnodes) < NUM_SWITCHES:
+            for nn in range(len(oldnodes),NUM_SWITCHES+1):
+                for o in range(1, NUM_SWITCHES + 1):
+                    if o == nn:
+                        continue
+                    k = random.randint(0, 5)#probability of 4/5
+                    if k == 0:
+                        continue
+                    if k == 1:
+                        continue
+                    if k == 2:
+                        continue
+                    if mininetswitch[o] not in graph_extern[mininetswitch[nn]]:
+                        b = random.choice(BANDWIDTHS)
+                        graph_extern.add_edge(mininetswitch[o],mininetswitch[nn],weight=b)
+                        graph_extern.add_edge(mininetswitch[nn],mininetswitch[o],weight=b)
+                        net.addLink(mininetswitch[nn], mininetswitch[o], cls=TCLink, bw=b)
         g=open("savedgraph3", 'w')
         for e in graph_extern.edge:
             for q in graph_extern.edge[e]:
@@ -197,16 +221,29 @@ def myNetwork():
     new_path = new_path.split(",")
     stoplinkfail1 = time.clock()
     print("Time taken for ZooKeeper to reach a consensus:%s"%(stoplinkfail1-startlinkfail))
+
+
     new_path.insert(0, 'h1')
     new_path.append('h2')
+
 
     info('new_graph'+str(graph_extern)+'\n')
     info('new_path'+str(new_path)+'\n')
     addFlowRules(net,new_path,c0)
     stoplinkfail2 = time.clock()
     print("Time taken to add new flow rules from time of link failure:%s"%(stoplinkfail2-startlinkfail))
+    g1=open("TimeZookeeperConsensus", 'a')
+    g2=open("TimeFlowrulesAdded",'a')
+    g3=open("Zookeeper-flowrulesadded",'a')
+    g1.write(str(NUM_SWITCHES)+" "+str(stoplinkfail1-startlinkfail)+"\n")
+
+    g2.write(str(NUM_SWITCHES)+" "+str(stoplinkfail2-startlinkfail)+"\n")
+
+    g3.write(str(NUM_SWITCHES)+" "+str(stoplinkfail2-stoplinkfail1)+"\n")
     CLI(net)
     net.stop()
+
+
 
     # The Zookeeper helper needs to be stopped
     helper.stopOperation(zk)

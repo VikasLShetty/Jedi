@@ -5,9 +5,10 @@ Use this file for all Singleton instances that you need throughout the project
 """
 
 import networkx as nx
+import sys
 
 # - Constants that we won't be changing
-RUN_FIRSTTIME=1
+RUN_FIRSTTIME=0
 NUM_SWITCHES = 5
 BANDWIDTHS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140]
 
@@ -27,12 +28,36 @@ def netshortestpath(start, end, path=[]):
     path = nx.single_source_dijkstra_path(graph_extern, start)
     return path[end]
 
+
+def BestBottleneckPath(src,dest):
+    path=[]
+    path.append(src)
+    bottlenecks={}
+    for node in graph_extern.node:
+        bottlenecks[node]=-1
+    for node,val in graph_extern.edge[src].items():
+        bottlenecks[node]=val['weight']
+    while dest not in path:
+        bestNode=None
+        maxWeight=-1
+        for node,weight in bottlenecks.items():
+            if node not in path:
+                if weight>maxWeight:
+                    bestNode=node
+                    maxWeight=weight
+        path.append(bestNode)
+        for node,val in graph_extern.edge[bestNode].items():
+            bottlenecks[node]=max(bottlenecks[node],min(val['weight'],bottlenecks[bestNode]))
+    return path,bottlenecks[dest]
+
+
 def get_weight(path):
-    weight = 10000
+    weight = 0
     for i in range(len(path)):
         if((i+1)<len(path)):
             weight +=  graph_extern[path[i]][path[i+1]]['weight']
     return weight
+
 
 def convertToConfig(byte_data):
     # Start with a default path that is an empty list and a score that is 0

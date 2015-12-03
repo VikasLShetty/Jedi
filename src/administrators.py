@@ -10,6 +10,7 @@ def vote(src,dest,intent):
     if(intent == 0): #Good Guy. Non Malicious
         path = netshortestpath(src ,dest)
         confidence = get_weight(path)
+        #path,confidence=BestBottleneckPath(src,dest)
         return (path,confidence)
 
     if(intent == 1):          #Evil Guy. malicious
@@ -19,6 +20,7 @@ def vote(src,dest,intent):
                 confidence = temp
                 path = copy.deepcopy(paths)
         #return shortest path weigth -1
+
         return (path,(get_weight(netshortestpath(src, dest))-1))
 
     if(intent == 2):          #Good Guy. mis-configured
